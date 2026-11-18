@@ -1,4 +1,5 @@
 import streamlit as st
+import numpy as np
 import pandas as pd
 import plotly.express as px
 
@@ -146,10 +147,15 @@ with tab3:
 # ---------------- Efficiency ----------------
 with tab4:
     a, b = st.columns(2)
-    a.plotly_chart(px.scatter(f, x="Weight", y="MPG Combined", color="Type", hover_name="Name",
-                              trendline="ols" if len(f) > 10 else None, color_discrete_sequence=PALETTE,
-                              title="Heavier = Thirstier: Weight vs. Fuel Economy")
-                   .update_layout(template=T, height=420), use_container_width=True)
+    fig_w = px.scatter(f, x="Weight", y="MPG Combined", color="Type", hover_name="Name",
+                       color_discrete_sequence=PALETTE, title="Heavier = Thirstier: Weight vs. Fuel Economy")
+    ok = f[["Weight", "MPG Combined"]].dropna()
+    if len(ok) > 10:  # simple overall trendline (no statsmodels needed)
+        m, c = np.polyfit(ok["Weight"], ok["MPG Combined"], 1)
+        xs = np.linspace(ok["Weight"].min(), ok["Weight"].max(), 50)
+        fig_w.add_scatter(x=xs, y=m * xs + c, mode="lines", name="Trend",
+                          line=dict(color="black", dash="dash"))
+    a.plotly_chart(fig_w.update_layout(template=T, height=420), use_container_width=True)
     b.plotly_chart(px.box(f, x="Type", y="MPG Combined", color="Type", color_discrete_sequence=PALETTE,
                           hover_name="Name", title="Fuel Economy by Body Type")
                    .update_layout(template=T, showlegend=False, height=420), use_container_width=True)
